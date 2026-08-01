@@ -58,6 +58,15 @@ for group_name in "${groups[@]}"; do
 	groupadd --system "${group_name}"
 done
 
+# /usr/local is an ostree symlink to ../var/usrlocal, and nothing creates that
+# target during a container build, so it dangles. The desktop app's %post runs
+# `mkdir -p /usr/local/bin` to put its MCP server on PATH; mkdir -p fails on a
+# dangling path component, and `set -eu` in the scriptlet turns that into a
+# failed rpm transaction. Create the target rather than replacing the symlink
+# with a real directory the way /opt is handled - /usr/local has to stay
+# writable at runtime, which is the whole point of pointing it at /var.
+mkdir -p /var/usrlocal
+
 dnf5 install -y "${packages[@]}"
 
 # `bootc container lint --fatal-warnings` fails on any /etc/group entry with no
@@ -70,5 +79,19 @@ done
 
 # Clean up repo file (required - repos don't work at runtime in bootc images)
 rm -f /etc/yum.repos.d/1password.repo
+
+# The desktop app's %post drops a convenience symlink for its MCP server under
+# /usr/local, which resolves into /var. bootc wants /var content declared in
+# tmpfiles.d and created at boot rather than baked into the image, so hand the
+# symlink over to systemd-tmpfiles and clear what the scriptlet left behind.
+# /var/usrlocal itself is already declared by the base image, in
+# rpm-ostree-0-integration-opt-usrlocal.conf.
+if [[ -L /var/usrlocal/bin/1password-mcp ]]; then
+	cat >/usr/lib/tmpfiles.d/1password-mcp.conf <<-'EOF'
+		d /var/usrlocal/bin 0755 root root -
+		L /var/usrlocal/bin/1password-mcp - - - - /opt/1Password/1password-mcp
+	EOF
+fi
+rm -rf /var/usrlocal
 
 echo "1Password installed successfully"
