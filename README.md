@@ -1,4 +1,4 @@
-# finpilot
+# jamberry-os
 
 A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux.
 
@@ -12,7 +12,7 @@ Instead, you create your own OS repository based on this template, allowing full
 
 ## What Makes this Raptor Different?
 
-Here are the changes from [Base Image Name]. This image is based on [Bluefin/Bazzite/Aurora/etc] and includes these customizations:
+Here are the changes from Fedora Silverblue 44. This image is assembled from `quay.io/fedora-ostree-desktops/silverblue:44` plus the Bluefin shared layers (`ghcr.io/projectbluefin/common` and `ghcr.io/ublue-os/brew`), and includes these customizations:
 
 ### Added Packages (Build-time)
 
@@ -214,7 +214,7 @@ All changes should be made via pull requests:
 Switch to your image:
 
 ```bash
-sudo bootc switch ghcr.io/your-username/your-repo-name:stable
+sudo bootc switch ghcr.io/multigl/jamberry-os:stable
 sudo systemctl reboot
 ```
 
@@ -244,9 +244,9 @@ Users can verify your images with:
 
 ```bash
 cosign verify \
-  --certificate-identity-regexp="https://github.com/your-username/your-repo-name/.github/workflows/" \
+  --certificate-identity-regexp="https://github.com/multigl/jamberry-os/.github/workflows/" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-  ghcr.io/your-username/your-repo-name:stable
+  ghcr.io/multigl/jamberry-os:stable
 ```
 
 ## Love Your Image? Let's Go to Production
@@ -312,9 +312,9 @@ Users can verify your images with:
 
 ```bash
 cosign verify \
-  --certificate-identity-regexp="https://github.com/your-username/your-repo-name/.github/workflows/" \
+  --certificate-identity-regexp="https://github.com/multigl/jamberry-os/.github/workflows/" \
   --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
-  ghcr.io/your-username/your-repo-name:stable
+  ghcr.io/multigl/jamberry-os:stable
 ```
 
 ## Detailed Guides
