@@ -1,5 +1,6 @@
 # Default Brewfile for jamberry-os
 # Uncomment packages you want to install, or add your own.
 # Users install via: ujust install-default-apps
-
-brew "chezmoi" # Manage dotfiles across machines; pairs with the 1Password CLI for secrets
+#
+# chezmoi and neovim are not here: both are baked into the image at build time
+# in build/10-build.sh, so a Brew copy would only shadow them on PATH.

@@ -86,16 +86,9 @@ install-gimp:
 install-vivaldi:
     ujust install-flatpak com.vivaldi.Vivaldi
 
-# Install chezmoi for dotfile management
-[group('Apps')]
-install-chezmoi:
-    #!/usr/bin/env bash
-    echo "Installing chezmoi via Homebrew..."
-    brew install chezmoi
-
-# Install everything jamberry-os ships on top of the base image that is not
-# already baked in. 1Password and Ghostty are build-time packages and are
-# always present, so they are deliberately absent here.
+# 1Password, Ghostty, neovim and chezmoi are build-time packages and are always
+# present, so they are deliberately absent here.
+# Install everything jamberry-os ships on top of the base image that is not already baked in
 [group('Apps')]
 install-jamberry-apps:
     #!/usr/bin/env bash

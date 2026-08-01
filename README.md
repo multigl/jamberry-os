@@ -20,13 +20,15 @@ These are baked into the image, so they are there the moment you boot — no set
 
 - **1Password** (`1password`, `1password-cli`) - Password manager, plus the `op` command-line tool that backs the SSH agent and secret injection. Installed from 1Password's official RPM repository. 1Password publishes the desktop app for x86_64 only, so an aarch64 build gets the `op` CLI alone.
 - **Ghostty** (`ghostty`) - GPU-accelerated terminal emulator. Fedora does not package it and it is not on Flathub, so it comes from the [scottames/ghostty](https://copr.fedorainfracloud.org/coprs/scottames/ghostty/) COPR linked from the Ghostty documentation.
+- **Neovim** (`neovim`) - Editor. The base image ships only `vim-minimal` and `nano`, so this is the one editor that is always there, including in a single-user rescue shell before Homebrew exists.
+- **chezmoi** (`chezmoi`) - Keeps dotfiles in sync across machines, and reads secrets straight from the 1Password CLI above instead of storing them in your dotfiles repo. Baked in rather than installed via Brew so a fresh machine can pull its dotfiles on first login.
 - **tmux** - Terminal multiplexer, inherited from the template.
 
 ### Added Applications (Runtime)
 
 Installed after first boot rather than baked in, so they update independently of the OS and do not add to image size.
 
-- **CLI Tools (Homebrew)**: `chezmoi` - Keeps dotfiles in sync across machines, and reads secrets straight from the 1Password CLI above instead of storing them in your dotfiles repo. Install with `ujust install-default-apps`.
+- **CLI Tools (Homebrew)**: none currently. `custom/brew/default.Brewfile` is comments-only; add entries there and install with `ujust install-default-apps`.
 - **GUI Apps (Flatpak)**: **Vivaldi** (`com.vivaldi.Vivaldi`) - Preinstalled on first boot. Reinstall with `ujust install-vivaldi` if you remove it.
 
 ### Removed/Disabled
@@ -41,7 +43,6 @@ Installed after first boot rather than baked in, so they update independently of
 ### ujust Shortcuts
 
 - `ujust install-jamberry-apps` - Everything above that is not already baked in
-- `ujust install-chezmoi` - chezmoi on its own
 - `ujust install-vivaldi` - Vivaldi on its own
 
 _Last updated: 2026-08-01_
