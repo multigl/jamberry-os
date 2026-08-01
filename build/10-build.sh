@@ -50,9 +50,9 @@ echo "::endgroup::"
 
 echo "::group:: Install Packages"
 
-# Install a minimal package to verify the cache is working
-# This ensures the DNF cache is populated for future builds
-dnf5 install -y tmux
+# Baked in rather than left to Brew: these are wanted on every boot of every
+# install, including before Homebrew has been extracted by brew-setup.service.
+dnf5 install -y tmux neovim chezmoi
 
 # Ghostty is not packaged in Fedora or on Flathub. scottames/ghostty is the COPR
 # linked from the Ghostty docs; it tracks tagged releases and also carries the
