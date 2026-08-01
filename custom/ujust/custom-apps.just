@@ -79,3 +79,26 @@ install-vscode:
 [group('Apps')]
 install-gimp:
     ujust install-flatpak org.gimp.GIMP
+
+# Install the Vivaldi browser via Flatpak
+# Preinstalled on first boot; this re-installs it if it was removed
+[group('Apps')]
+install-vivaldi:
+    ujust install-flatpak com.vivaldi.Vivaldi
+
+# Install chezmoi for dotfile management
+[group('Apps')]
+install-chezmoi:
+    #!/usr/bin/env bash
+    echo "Installing chezmoi via Homebrew..."
+    brew install chezmoi
+
+# Install everything jamberry-os ships on top of the base image that is not
+# already baked in. 1Password and Ghostty are build-time packages and are
+# always present, so they are deliberately absent here.
+[group('Apps')]
+install-jamberry-apps:
+    #!/usr/bin/env bash
+    echo "Installing jamberry-os runtime applications..."
+    brew bundle --file /usr/share/ublue-os/homebrew/default.Brewfile
+    ujust install-vivaldi

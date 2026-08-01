@@ -79,6 +79,14 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 # Set dnf options before build scripts (persists across subsequent RUN layers)
 RUN dnf5 config-manager setopt keepcache=1 install_weak_deps=0
 
+### /opt
+## The base image ships /opt as a symlink to var/opt. /var is machine-local
+## runtime state in bootc, so anything a build-time package installs there is
+## not carried in the image and does not survive `bootc upgrade`. 1Password
+## installs into /opt/1Password, so /opt must be a real directory *before* any
+## package that writes to it runs.
+RUN rm /opt && mkdir /opt
+
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache/libdnf5 \
     --mount=type=cache,dst=/var/cache/rpm-ostree \
@@ -86,6 +94,14 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/boot \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build/10-build.sh
+
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache/libdnf5 \
+    --mount=type=cache,dst=/var/cache/rpm-ostree \
+    --mount=type=secret,id=GITHUB_TOKEN \
+    --mount=type=tmpfs,dst=/boot \
+    --mount=type=tmpfs,dst=/tmp \
+    /ctx/build/20-onepassword.sh
 
 ### CLEANUP
 ## Use Bluefin's clean-stage.sh to remove build artifacts before linting.
@@ -96,14 +112,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     --mount=type=tmpfs,dst=/boot \
     /ctx/build/clean-stage.sh
-
-### /opt
-## Makes /opt writeable by default. Needs to be here to make the main image
-## build strict (no /opt there). This is for downstream images/stuff like k0s.
-## If you need /opt as an immutable real directory for build-time packages
-## (e.g. google-chrome, docker-desktop), replace the next line with:
-##   RUN rm /opt && mkdir /opt
-RUN rm -rf /opt && ln -s /var/opt /opt
 
 ### INIT
 ## Required for bootc images

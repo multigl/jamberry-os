@@ -54,6 +54,11 @@ echo "::group:: Install Packages"
 # This ensures the DNF cache is populated for future builds
 dnf5 install -y tmux
 
+# Ghostty is not packaged in Fedora or on Flathub. scottames/ghostty is the COPR
+# linked from the Ghostty docs; it tracks tagged releases and also carries the
+# gtk4-layer-shell dependency, which Fedora does not ship either.
+copr_install_isolated "scottames/ghostty" ghostty
+
 # Example using COPR with isolated pattern:
 # copr_install_isolated "ublue-os/staging" package-name
 

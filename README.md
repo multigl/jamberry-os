@@ -16,24 +16,35 @@ Here are the changes from Fedora Silverblue 44. This image is assembled from `qu
 
 ### Added Packages (Build-time)
 
-- **System packages**: tmux, micro, mosh - [brief explanation of why]
+These are baked into the image, so they are there the moment you boot — no setup step, and they update with the OS rather than on their own schedule.
+
+- **1Password** (`1password`, `1password-cli`) - Password manager, plus the `op` command-line tool that backs the SSH agent and secret injection. Installed from 1Password's official RPM repository. 1Password publishes the desktop app for x86_64 only, so an aarch64 build gets the `op` CLI alone.
+- **Ghostty** (`ghostty`) - GPU-accelerated terminal emulator. Fedora does not package it and it is not on Flathub, so it comes from the [scottames/ghostty](https://copr.fedorainfracloud.org/coprs/scottames/ghostty/) COPR linked from the Ghostty documentation.
+- **tmux** - Terminal multiplexer, inherited from the template.
 
 ### Added Applications (Runtime)
 
-- **CLI Tools (Homebrew)**: neovim, helix - [brief explanation]
-- **GUI Apps (Flatpak)**: Spotify, Thunderbird - [brief explanation]
+Installed after first boot rather than baked in, so they update independently of the OS and do not add to image size.
+
+- **CLI Tools (Homebrew)**: `chezmoi` - Keeps dotfiles in sync across machines, and reads secrets straight from the 1Password CLI above instead of storing them in your dotfiles repo. Install with `ujust install-default-apps`.
+- **GUI Apps (Flatpak)**: **Vivaldi** (`com.vivaldi.Vivaldi`) - Preinstalled on first boot. Reinstall with `ujust install-vivaldi` if you remove it.
 
 ### Removed/Disabled
 
-- List anything removed from base image
+- Nothing removed from the base image yet.
 
 ### Configuration Changes
 
-- Any systemd services enabled/disabled
-- Desktop environment changes
-- Other notable modifications
+- No systemd or desktop changes beyond the template defaults (`podman.socket` and the `brew-*` units stay enabled).
+- `/opt` is kept as a real directory instead of the template's symlink to `/var/opt`, because 1Password installs into `/opt/1Password` and a symlink would put those files in runtime state, where the image build cannot ship them.
 
-_Last updated: [date]_
+### ujust Shortcuts
+
+- `ujust install-jamberry-apps` - Everything above that is not already baked in
+- `ujust install-chezmoi` - chezmoi on its own
+- `ujust install-vivaldi` - Vivaldi on its own
+
+_Last updated: 2026-08-01_
 
 > Replace the placeholders above with your actual customizations whenever you add or remove packages, apps, or configuration. This section is what tells users how your image differs from the base.
 
