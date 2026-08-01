@@ -18,7 +18,7 @@ Here are the changes from Fedora Silverblue 44. This image is assembled from `qu
 
 These are baked into the image, so they are there the moment you boot — no setup step, and they update with the OS rather than on their own schedule.
 
-- **1Password** (`1password`, `1password-cli`) - Password manager, plus the `op` command-line tool that backs the SSH agent and secret injection. Installed from 1Password's official RPM repository.
+- **1Password** (`1password`, `1password-cli`) - Password manager, plus the `op` command-line tool that backs the SSH agent and secret injection. Installed from 1Password's official RPM repository. 1Password publishes the desktop app for x86_64 only, so an aarch64 build gets the `op` CLI alone.
 - **Ghostty** (`ghostty`) - GPU-accelerated terminal emulator. Fedora does not package it and it is not on Flathub, so it comes from the [scottames/ghostty](https://copr.fedorainfracloud.org/coprs/scottames/ghostty/) COPR linked from the Ghostty documentation.
 - **tmux** - Terminal multiplexer, inherited from the template.
 
