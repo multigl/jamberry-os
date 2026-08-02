@@ -42,7 +42,7 @@ probe=$("${podman}" run --rm -i --entrypoint /bin/bash "${image}" -s <<'PROBE'
 	# A name in --list proves nothing about which body is bound to it: 00-entry.just
 	# sets allow-duplicate-recipes, so an upstream file can silently take over a
 	# recipe this repo defines. Pin a body, not a name.
-	check "ujust:body" "ujust --show install-jamberry-apps | grep -q install-vivaldi"
+	check "ujust:body" "ujust --show install-jamberry-apps | grep -q default.Brewfile"
 
 	# grep -x pins the entire line, so EDITOR=/usr/bin/nvim fails this check on
 	# purpose: an absolute path would defeat PATH resolution at exec time.
