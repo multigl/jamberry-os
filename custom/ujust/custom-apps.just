@@ -86,8 +86,10 @@ install-gimp:
 install-vivaldi:
     ujust install-flatpak com.vivaldi.Vivaldi
 
-# 1Password, Ghostty, neovim and chezmoi are build-time packages and are always
-# present, so they are deliberately absent here.
+# 1Password, Ghostty, neovim, chezmoi, zsh and just are installed with dnf in
+# build/10-build.sh, so they are always present and are not repeated here. The
+# neovim overlap with the chezmoi-managed Homebrew copy is deliberate: the dnf
+# copy is the floor for first boot and rescue, and Homebrew's wins on PATH.
 # Install everything jamberry-os ships on top of the base image that is not already baked in
 [group('Apps')]
 install-jamberry-apps:

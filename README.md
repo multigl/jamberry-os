@@ -20,9 +20,11 @@ These are baked into the image, so they are there the moment you boot — no set
 
 - **1Password** (`1password`, `1password-cli`) - Password manager, plus the `op` command-line tool that backs the SSH agent and secret injection. Installed from 1Password's official RPM repository. 1Password publishes the desktop app for x86_64 only, so an aarch64 build gets the `op` CLI alone.
 - **Ghostty** (`ghostty`) - GPU-accelerated terminal emulator. Fedora does not package it and it is not on Flathub, so it comes from the [scottames/ghostty](https://copr.fedorainfracloud.org/coprs/scottames/ghostty/) COPR linked from the Ghostty documentation.
-- **Neovim** (`neovim`) - Editor. The base image ships only `vim-minimal` and `nano`, so this is the one editor that is always there, including in a single-user rescue shell before Homebrew exists.
+- **Neovim** (`neovim`) - Editor, and the system default via `EDITOR`. The base image ships only `vim-minimal` and `nano`, so this is the one editor that is always there, including in a single-user rescue shell before Homebrew exists. If you also install neovim through Homebrew, that copy takes over — see [Editor precedence](#editor-precedence).
 - **chezmoi** (`chezmoi`) - Keeps dotfiles in sync across machines, and reads secrets straight from the 1Password CLI above instead of storing them in your dotfiles repo. Baked in rather than installed via Brew so a fresh machine can pull its dotfiles on first login.
 - **tmux** - Terminal multiplexer, inherited from the template.
+- **zsh** - Shell. Present so a fresh host can switch shells and apply zsh dotfiles before Homebrew exists.
+- **just** (`just`) - Command runner backing `ujust`. Without it the shipped `.just` files have no runner and every `ujust` recipe is unreachable.
 
 ### Added Applications (Runtime)
 
@@ -38,14 +40,31 @@ Installed after first boot rather than baked in, so they update independently of
 ### Configuration Changes
 
 - No systemd or desktop changes beyond the template defaults (`podman.socket` and the `brew-*` units stay enabled).
+- `EDITOR` and `VISUAL` are set to `nvim` in `/etc/environment`. See [Editor precedence](#editor-precedence).
+- The `ujust` wrapper and the four `just` files it imports from `@projectbluefin/common`'s `shared/` tree are installed by name. The rest of that tree is deliberately not overlaid, since it carries systemd units and MOTD integration that would change boot behaviour.
 - `/opt` is kept as a real directory instead of the template's symlink to `/var/opt`, because 1Password installs into `/opt/1Password` and a symlink would put those files in runtime state, where the image build cannot ship them.
+
+### Editor precedence
+
+The image sets `EDITOR=nvim` and `VISUAL=nvim` in `/etc/environment`, as bare
+command names rather than absolute paths. That is load-bearing: Homebrew puts
+`/home/linuxbrew/.linuxbrew/bin` ahead of `/usr/bin` on `PATH`, so if you also
+install neovim through Homebrew — as the chezmoi dotfiles do on Linux — that
+newer copy is what `EDITOR` resolves to, automatically. The baked copy is the
+floor that covers first boot before `brew-setup.service` has run, rescue shells,
+and a broken Homebrew installation.
+
+`/etc/environment` is used rather than `/etc/profile.d` because `pam_env` applies
+it to every session — login shells, ssh, and GDM — not just login shells. `/etc`
+is a three-way merge target in bootc, so if you edit this file on a host your
+edit survives `bootc upgrade`.
 
 ### ujust Shortcuts
 
 - `ujust install-jamberry-apps` - Everything above that is not already baked in
 - `ujust install-vivaldi` - Vivaldi on its own
 
-_Last updated: 2026-08-01_
+_Last updated: 2026-08-02_
 
 > Replace the placeholders above with your actual customizations whenever you add or remove packages, apps, or configuration. This section is what tells users how your image differs from the base.
 
@@ -383,6 +402,7 @@ Test your changes before pushing:
 
 ```bash
 just build              # Build container image
+just test-image         # Assert the image package contract
 just build-qcow2        # Build VM disk image
 just run-vm-qcow2       # Test in browser-based VM
 ```
