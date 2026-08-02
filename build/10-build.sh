@@ -52,7 +52,11 @@ echo "::group:: Install Packages"
 
 # Baked in rather than left to Brew: these are wanted on every boot of every
 # install, including before Homebrew has been extracted by brew-setup.service.
-dnf5 install -y tmux neovim chezmoi
+# just is the command runner the ujust wrapper execs. neovim overlaps with the copy
+# chezmoi installs from Homebrew, and that overlap is deliberate - Homebrew's
+# bin directory precedes /usr/bin on PATH, so its copy wins once dotfiles have
+# been applied, and this one is the floor for first boot and rescue.
+dnf5 install -y tmux neovim chezmoi just zsh
 
 # Ghostty is not packaged in Fedora or on Flathub. scottames/ghostty is the COPR
 # linked from the Ghostty docs; it tracks tagged releases and also carries the
