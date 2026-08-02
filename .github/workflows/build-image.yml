@@ -143,23 +143,22 @@ jobs:
           allow-write: ${{ github.event_name != 'pull_request' && 'true' || 'false' }}
           cache-bust: ${{ hashFiles('**/Containerfile') }}
 
-      # OPTIONAL: Rechunking (OCI-native, no rpm-ostree)
-      # Rechunking improves OTA delta performance by reorganizing layers.
-      # Uncomment the step below to enable it. Renovate will keep the action
-      # pinned and up to date automatically once it is uncommented.
+      # chunkah repacks the image into evenly sized, package-aligned layers, which
+      # is what makes a bootc upgrade download only what changed instead of a few
+      # enormous layers. It rewrites the tag in place, so it has to run after the
+      # version label is read and before tagging and pushing.
       #
-      # For optimal layer grouping (packages sorted by update cadence), also add
-      # the bootc-build/apply-pkg-intervals step before rechunking and create a
-      # .github/workflows/pkg-cadence.yml workflow. See:
-      #   https://github.com/projectbluefin/actions/tree/main/bootc-build/chunka
-      #   https://github.com/projectbluefin/actions/tree/main/bootc-build/apply-pkg-intervals
-      # - name: Rechunk image
-      #   if: github.event_name != 'pull_request'
-      #   id: rechunk-image
-      #   uses: projectbluefin/actions/bootc-build/chunka@6231015b336556d2ff0adc1d1e59514bf19dcb42 # v1
-      #   with:
-      #     source-image: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
-      #     max-layers: 128
+      # No apply-pkg-intervals step: that one groups layers by how often each
+      # package updates, and it needs a files/pkg-intervals.tsv produced by a
+      # pkg-cadence workflow this repo does not have. Without it chunkah falls
+      # back to its default grouping, which still beats no rechunking.
+      - name: Rechunk image
+        if: github.event_name != 'pull_request'
+        id: rechunk-image
+        uses: projectbluefin/actions/bootc-build/chunka@9623ba6a5577ad1221d76a223c9dacbd9043bd04 # v1
+        with:
+          source-image: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+          max-layers: 128
 
       - name: Tag images
         if: github.event_name != 'pull_request'
@@ -189,23 +188,28 @@ jobs:
           default-tag: ${{ steps.generate-tags.outputs.default-tag }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # OPTIONAL: Sign and attest (SLSA Build L2 provenance)
-      # Bluefin pattern: keyless OIDC signing via Fulcio.
-      # Uncomment to enable. Requires 'id-token: write' permission (already granted).
-      # Non-fatal — signing failures never block image publishing.
-
-      # - name: Sign and publish
-      #   if: github.event_name != 'pull_request'
-      #   continue-on-error: true
-      #   uses: projectbluefin/actions/bootc-build/sign-and-publish@6231015b336556d2ff0adc1d1e59514bf19dcb42 # v1
-      #   with:
-      #     image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-      #     digest: ${{ steps.push.outputs.digest }}
-      #     signing-mode: keyless
-      #     generate-sbom: false
-      #     push-attestation: true
-      #     certificate-identity-regexp: https://github.com/${{ github.repository }}/.github/workflows/
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      # Keyless OIDC signing through Fulcio, plus a SLSA Build L2 provenance
+      # attestation. No cosign keypair and no repository secret: the runner's
+      # own id-token is the identity, which is why the permissions block above
+      # grants id-token and attestations write.
+      #
+      # The condition matches the push step exactly rather than only excluding
+      # pull requests, because this signs steps.push.outputs.digest — on any run
+      # where the push is skipped that output is empty and there is nothing to
+      # sign. continue-on-error keeps a Sigstore or Rekor outage from failing a
+      # build whose image is already published.
+      - name: Sign and publish
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        continue-on-error: true
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@9623ba6a5577ad1221d76a223c9dacbd9043bd04 # v1
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          digest: ${{ steps.push.outputs.digest }}
+          signing-mode: keyless
+          generate-sbom: false
+          push-attestation: true
+          certificate-identity-regexp: https://github.com/${{ github.repository }}/.github/workflows/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build telemetry summary
         if: steps.detect-changes.outputs.should_build == 'true' || github.event_name != 'pull_request'
