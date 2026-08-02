@@ -43,6 +43,7 @@ name=Vivaldi (build-time only)
 baseurl=https://repo.vivaldi.com/archive/rpm/$basearch
 enabled=1
 gpgcheck=1
+repo_gpgcheck=1
 gpgkey=https://repo.vivaldi.com/archive/linux_signing_key.pub
 EOF
 
@@ -72,8 +73,10 @@ echo "::group:: Default Browser"
 # browser keeps that choice across bootc upgrade. This is a default, not policy.
 #
 # Only the four web types are bound. vivaldi-stable.desktop also claims
-# application/pdf and four image types; binding those would displace GNOME Papers
-# and Loupe, which is not what "default browser" means.
+# application/pdf and four image types; leaving those unbound here means a later
+# GNOME Papers or Loupe install takes over via gnome-mimeapps.list, which
+# outranks this file's silence. Neither is installed today, so Vivaldi is what
+# actually opens them in the meantime, via mimeinfo.cache fallback.
 cat >/etc/xdg/mimeapps.list <<'EOF'
 [Default Applications]
 text/html=vivaldi-stable.desktop

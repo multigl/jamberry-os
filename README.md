@@ -25,6 +25,7 @@ These are baked into the image, so they are there the moment you boot — no set
 - **tmux** - Terminal multiplexer, inherited from the template.
 - **zsh** - Shell. Present so a fresh host can switch shells and apply zsh dotfiles before Homebrew exists.
 - **just** (`just`) - Command runner backing `ujust`. Without it the shipped `.just` files have no runner and every `ujust` recipe is unreachable.
+- **Vivaldi** (`vivaldi-stable`) - Default web browser, replacing Firefox (see Removed/Disabled below). Installed from Vivaldi's official archive RPM repository by `build/30-vivaldi.sh`. At 444 MiB it is the largest package baked into this image.
 
 ### Added Applications (Runtime)
 
@@ -35,7 +36,7 @@ Installed after first boot rather than baked in, so they update independently of
 
 ### Removed/Disabled
 
-- **Firefox** - removed from the base image. **Vivaldi** replaces it, baked into the image by `build/30-vivaldi.sh` rather than installed at runtime, so it is present offline and in the ISO. It is the default handler for `http`, `https`, `text/html` and `application/xhtml+xml`, and the value of `$BROWSER`. PDFs and images are deliberately left to GNOME Papers and Loupe.
+- **Firefox** - removed from the base image. **Vivaldi** replaces it, baked into the image by `build/30-vivaldi.sh` rather than installed at runtime, so it is present offline and in the ISO. It is the default handler for `http`, `https`, `text/html` and `application/xhtml+xml`, and the value of `$BROWSER`. PDFs and images are deliberately not bound in `/etc/xdg/mimeapps.list`, so a later GNOME Papers or Loupe install takes over; with neither installed today, Vivaldi opens them instead.
 
 ### Configuration Changes
 

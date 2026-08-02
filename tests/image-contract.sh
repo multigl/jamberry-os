@@ -77,8 +77,9 @@ probe=$("${podman}" run --rm -i --entrypoint /bin/bash "${image}" -s <<'PROBE'
 	check "mime:https" "grep -qx 'x-scheme-handler/https=vivaldi-stable.desktop' /etc/xdg/mimeapps.list"
 
 	# vivaldi-stable.desktop also claims application/pdf and four image types.
-	# Binding those would displace GNOME Papers and Loupe, so their absence from
-	# this file is the assertion, not an omission.
+	# Leaving them unbound here is deliberate, so a later GNOME Papers or Loupe
+	# install can claim them via gnome-mimeapps.list - their absence from this
+	# file is the assertion, not an omission.
 	check "mime:pdf-untouched" "! grep -q '^application/pdf=' /etc/xdg/mimeapps.list"
 
 	# The vivaldi-stable %post writes /etc/yum.repos.d/vivaldi.repo itself, and
@@ -149,7 +150,7 @@ expect "mime:html" "text/html bound to vivaldi"
 expect "mime:xhtml" "application/xhtml+xml bound to vivaldi"
 expect "mime:http" "http scheme bound to vivaldi"
 expect "mime:https" "https scheme bound to vivaldi"
-expect "mime:pdf-untouched" "application/pdf left to GNOME Papers"
+expect "mime:pdf-untouched" "application/pdf not bound in /etc/xdg/mimeapps.list"
 expect "repo:vivaldi-absent" "vivaldi repo file not in image"
 expect "cron:vivaldi-absent" "vivaldi repo-repair cron job not in image"
 expect "env:browser" "BROWSER=vivaldi-stable in /etc/environment, PATH-resolved"
