@@ -24,8 +24,14 @@ custom/ujust/
 ```
 
 **Example Files in this directory:**
-- [`custom-apps.just`](custom-apps.just) - Application installation commands (Brewfiles, Flatpaks, JetBrains Toolbox)
-- [`custom-system.just`](custom-system.just) - System configuration commands (benchmarks, dev groups, maintenance)
+- [`custom-apps.just`](custom-apps.just) - Application installation commands (Brewfiles, Flatpaks)
+- [`custom-system.just`](custom-system.just) - System configuration commands (dev groups, maintenance)
+
+Recipe names here are not namespaced, and `00-entry.just` sets
+`allow-duplicate-recipes`, so a name that `@projectbluefin/common` already defines
+silently resolves to the upstream body. Check a new recipe with
+`ujust --show <name>` against a built image before assuming yours is the one that
+runs.
 
 ## Example Commands
 
