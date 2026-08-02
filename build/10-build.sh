@@ -18,11 +18,28 @@ shopt -s nullglob
 
 echo "::group:: Copy Bluefin Config from Common"
 
-# Copy just files from @projectbluefin/common (includes 00-entry.just which imports 60-custom.just)
+# 00-entry.just is the ujust entrypoint, and its imports of apps.just,
+# default.just, shared.just and update.just are not optional. common splits the
+# just files across two trees: bluefin/ carries 00-entry, changelog, system and
+# 60-bonedigger, and shared/ carries the other four. Copying bluefin/ alone
+# leaves those four imports dangling and every ujust invocation dies with
+# "could not find source file for import" at 00-entry.just:11.
 mkdir -p /usr/share/ublue-os/just/
 shopt -s nullglob
 cp -r /ctx/oci/common/bluefin/usr/share/ublue-os/just/* /usr/share/ublue-os/just/
+cp -r /ctx/oci/common/shared/usr/share/ublue-os/just/* /usr/share/ublue-os/just/
 shopt -u nullglob
+
+# Those files need a runner, and the base image has none. Take the wrapper and
+# its completions by name rather than overlaying common's shared/ tree, which is
+# 183 files including systemd units, ublue-*-setup helpers, fastfetch and umotd
+# MOTD integration and uupd config - all of which would change boot behaviour.
+# The fish completion is skipped because fish is not installed.
+install -Dm0755 /ctx/oci/common/shared/usr/bin/ujust /usr/bin/ujust
+install -Dm0644 /ctx/oci/common/shared/usr/share/bash-completion/completions/ujust \
+	/usr/share/bash-completion/completions/ujust
+install -Dm0644 /ctx/oci/common/shared/usr/share/zsh/site-functions/_ujust \
+	/usr/share/zsh/site-functions/_ujust
 
 echo "::endgroup::"
 
