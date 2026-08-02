@@ -31,11 +31,11 @@ These are baked into the image, so they are there the moment you boot — no set
 Installed after first boot rather than baked in, so they update independently of the OS and do not add to image size.
 
 - **CLI Tools (Homebrew)**: none currently. `custom/brew/default.Brewfile` is comments-only; add entries there and install with `ujust install-default-apps`.
-- **GUI Apps (Flatpak)**: **Vivaldi** (`com.vivaldi.Vivaldi`) - Preinstalled on first boot. Reinstall with `ujust install-vivaldi` if you remove it.
+- **GUI Apps (Flatpak)**: none currently. `custom/flatpaks/default.preinstall` is comments-only; add entries there to have them preinstalled on first boot.
 
 ### Removed/Disabled
 
-- Nothing removed from the base image yet.
+- **Firefox** - removed from the base image. **Vivaldi** replaces it, baked into the image by `build/30-vivaldi.sh` rather than installed at runtime, so it is present offline and in the ISO. It is the default handler for `http`, `https`, `text/html` and `application/xhtml+xml`, and the value of `$BROWSER`. PDFs and images are deliberately left to GNOME Papers and Loupe.
 
 ### Configuration Changes
 
@@ -77,7 +77,6 @@ The values are set in two places, on purpose:
 ### ujust Shortcuts
 
 - `ujust install-jamberry-apps` - Everything above that is not already baked in
-- `ujust install-vivaldi` - Vivaldi on its own
 
 _Last updated: 2026-08-02_
 
