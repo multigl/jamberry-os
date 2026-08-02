@@ -70,9 +70,12 @@ echo "::group:: Install Packages"
 # Baked in rather than left to Brew: these are wanted on every boot of every
 # install, including before Homebrew has been extracted by brew-setup.service.
 # just is the command runner the ujust wrapper execs. neovim overlaps with the copy
-# chezmoi installs from Homebrew, and that overlap is deliberate - Homebrew's
-# bin directory precedes /usr/bin on PATH, so its copy wins once dotfiles have
-# been applied, and this one is the floor for first boot and rescue.
+# chezmoi installs from Homebrew, and that overlap is deliberate. The image keeps
+# /usr/bin ahead of Homebrew - ublue's /etc/profile.d/brew.sh strips brew
+# shellenv's own PATH= line and appends instead, so Homebrew cannot shadow system
+# binaries like dbus - so this copy is what a stock session resolves. A shell whose
+# own config prepends /home/linuxbrew/.linuxbrew/bin, as these dotfiles do, gets
+# the Homebrew copy; this one remains the floor for first boot and rescue.
 dnf5 install -y tmux neovim chezmoi just zsh
 
 # Ghostty is not packaged in Fedora or on Flathub. scottames/ghostty is the COPR
@@ -94,17 +97,19 @@ systemctl enable brew-update.timer
 systemctl enable brew-upgrade.timer
 # Example: systemctl mask unwanted-service
 
-# EDITOR is the bare command name on purpose. Homebrew's profile.d snippet puts
-# /home/linuxbrew/.linuxbrew/bin ahead of /usr/bin, so resolving through PATH at
-# exec time is what lets a brew-installed neovim take over once chezmoi has run,
-# while the dnf copy stays the floor for first boot and rescue. An absolute path
-# here would pin every session to the dnf copy forever.
+# EDITOR is the bare command name on purpose: it resolves through whatever PATH
+# the session actually has at exec time instead of pinning every session to one
+# copy of neovim. The image itself keeps /usr/bin ahead of Homebrew - ublue's
+# /etc/profile.d/brew.sh drops brew shellenv's own PATH= line and appends, so
+# Homebrew cannot shadow system binaries like dbus - so a stock session gets the
+# dnf copy. A shell whose own config prepends /home/linuxbrew/.linuxbrew/bin, as
+# these dotfiles do, gets the Homebrew copy. An absolute path here would take that
+# choice away from the session.
 #
-# /etc/environment rather than /etc/profile.d: pam_env.so is in the auth stack of
-# /etc/authselect/system-auth, so this reaches every PAM session - login shells,
-# ssh and GDM - where a profile.d snippet reaches login shells only. It also runs
-# before profile.d, so Fedora's nano-default-editor snippet finds EDITOR already
-# set, hits its own [ -z "$EDITOR" ] guard, and does nothing.
+# /etc/environment is read by pam_env.so, which /etc/authselect/system-auth has in
+# its auth stack, so this reaches every PAM session - login shells, ssh and GDM.
+# It also runs before profile.d, so Fedora's nano-default-editor snippet finds
+# EDITOR already set, hits its own [ -z "$EDITOR" ] guard, and does nothing.
 #
 # The file exists and is empty in the base image, so this appends rather than
 # creates. /etc is a three-way merge target in bootc: a host that edits this file
@@ -114,6 +119,30 @@ cat >>/etc/environment <<'EOF'
 EDITOR=nvim
 VISUAL=nvim
 EOF
+
+# The same defaults again, for the shells /etc/environment never reaches. The
+# file's own header explains why it is not redundant.
+cat >/etc/profile.d/zz-jamberry-editor.sh <<'EOF'
+# jamberry-os: default editor for login shells that never see /etc/environment.
+#
+# This is NOT redundant with /etc/environment. pam_env.so appears only in the auth
+# stack of /etc/authselect/system-auth, never the session stack, and a rescue shell
+# - systemd-sulogin-shell handing off to sulogin - runs with no PAM at all, so it
+# never reads that file. Without this snippet such a shell sources Fedora's
+# nano-default-editor.sh, finds EDITOR unset, and lands on nano. That rescue shell
+# is exactly what the baked neovim exists for.
+#
+# The zz- prefix makes this sort after nano-default-editor.sh, whose own
+# [ -z "$EDITOR" ] guard would otherwise win. Setting the variables
+# unconditionally is deliberate: a user's ~/.bashrc or ~/.zshrc runs later still
+# and can override them.
+#
+# Bare command names, not absolute paths, so they resolve through the session's
+# own PATH - see build/10-build.sh for why that matters.
+export EDITOR=nvim
+export VISUAL=nvim
+EOF
+chmod 0644 /etc/profile.d/zz-jamberry-editor.sh
 
 echo "::endgroup::"
 

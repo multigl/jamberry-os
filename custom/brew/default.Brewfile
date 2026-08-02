@@ -10,5 +10,7 @@
 #
 # Overlap between the two is allowed only where the dnf copy is a bootstrap or
 # rescue fallback. neovim is the one such case: chezmoi installs a Homebrew copy
-# on Linux, and because /home/linuxbrew/.linuxbrew/bin precedes /usr/bin on PATH,
-# that copy deliberately shadows the baked one.
+# on Linux. The image keeps /usr/bin ahead of Homebrew - ublue's brew.sh appends
+# to PATH on purpose, so Homebrew cannot shadow system binaries like dbus - so the
+# Homebrew copy wins only in shells whose own config prepends it, as these dotfiles
+# do. EDITOR is a bare command name, so it follows whichever the session resolves.

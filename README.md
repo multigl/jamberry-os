@@ -20,7 +20,7 @@ These are baked into the image, so they are there the moment you boot — no set
 
 - **1Password** (`1password`, `1password-cli`) - Password manager, plus the `op` command-line tool that backs the SSH agent and secret injection. Installed from 1Password's official RPM repository. 1Password publishes the desktop app for x86_64 only, so an aarch64 build gets the `op` CLI alone.
 - **Ghostty** (`ghostty`) - GPU-accelerated terminal emulator. Fedora does not package it and it is not on Flathub, so it comes from the [scottames/ghostty](https://copr.fedorainfracloud.org/coprs/scottames/ghostty/) COPR linked from the Ghostty documentation.
-- **Neovim** (`neovim`) - Editor, and the system default via `EDITOR`. The base image ships only `vim-minimal` and `nano`, so this is the one editor that is always there, including in a single-user rescue shell before Homebrew exists. If you also install neovim through Homebrew, that copy takes over — see [Editor precedence](#editor-precedence).
+- **Neovim** (`neovim`) - Editor, and the system default via `EDITOR`. The base image ships only `vim-minimal` and `nano`, so this is the one editor that is always there, including in a single-user rescue shell before Homebrew exists. This is also the copy a stock session gets; a Homebrew neovim takes over only in shells whose own config puts Homebrew first on `PATH` — see [Editor precedence](#editor-precedence).
 - **chezmoi** (`chezmoi`) - Keeps dotfiles in sync across machines, and reads secrets straight from the 1Password CLI above instead of storing them in your dotfiles repo. Baked in rather than installed via Brew so a fresh machine can pull its dotfiles on first login.
 - **tmux** - Terminal multiplexer, inherited from the template.
 - **zsh** - Shell. Present so a fresh host can switch shells and apply zsh dotfiles before Homebrew exists.
@@ -40,24 +40,39 @@ Installed after first boot rather than baked in, so they update independently of
 ### Configuration Changes
 
 - No systemd or desktop changes beyond the template defaults (`podman.socket` and the `brew-*` units stay enabled).
-- `EDITOR` and `VISUAL` are set to `nvim` in `/etc/environment`. See [Editor precedence](#editor-precedence).
+- `EDITOR` and `VISUAL` are set to `nvim` in `/etc/environment` and again in `/etc/profile.d/zz-jamberry-editor.sh`. See [Editor precedence](#editor-precedence).
 - The `ujust` wrapper and the four `just` files it imports from `@projectbluefin/common`'s `shared/` tree are installed by name. The rest of that tree is deliberately not overlaid, since it carries systemd units and MOTD integration that would change boot behaviour.
 - `/opt` is kept as a real directory instead of the template's symlink to `/var/opt`, because 1Password installs into `/opt/1Password` and a symlink would put those files in runtime state, where the image build cannot ship them.
 
 ### Editor precedence
 
-The image sets `EDITOR=nvim` and `VISUAL=nvim` in `/etc/environment`, as bare
-command names rather than absolute paths. That is load-bearing: Homebrew puts
-`/home/linuxbrew/.linuxbrew/bin` ahead of `/usr/bin` on `PATH`, so if you also
-install neovim through Homebrew — as the chezmoi dotfiles do on Linux — that
-newer copy is what `EDITOR` resolves to, automatically. The baked copy is the
-floor that covers first boot before `brew-setup.service` has run, rescue shells,
-and a broken Homebrew installation.
+The image sets `EDITOR=nvim` and `VISUAL=nvim` as bare command names, never
+absolute paths. That is load-bearing: `EDITOR` then resolves through whatever
+`PATH` the session actually has at the moment something execs it.
 
-`/etc/environment` is used rather than `/etc/profile.d` because `pam_env` applies
-it to every session — login shells, ssh, and GDM — not just login shells. `/etc`
-is a three-way merge target in bootc, so if you edit this file on a host your
-edit survives `bootc upgrade`.
+**The image itself keeps `/usr/bin` ahead of Homebrew.** Universal Blue's
+`/etc/profile.d/brew.sh` deliberately strips `brew shellenv`'s own `PATH=` line
+and *appends* `/home/linuxbrew/.linuxbrew/bin` instead, so a Homebrew package
+cannot shadow a system binary like `dbus`; it is also gated on the shell being
+interactive. So out of the box, `nvim` is the baked `/usr/bin/nvim`.
+
+A shell whose own config *prepends* Homebrew gets the Homebrew copy instead. The
+chezmoi dotfiles do exactly that (`PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"` in
+`.zshrc`), which is why a Homebrew-installed neovim wins on those machines. That
+is the dotfiles' choice, not the image's — and the bare `EDITOR` is what lets the
+choice take effect without the image having to know about it.
+
+The values are set in two places, on purpose:
+
+- **`/etc/environment`**, applied by `pam_env` — reaches every PAM session:
+  login shells, ssh, and GDM. `/etc` is a three-way merge target in bootc, so if
+  you edit this file on a host your edit survives `bootc upgrade`.
+- **`/etc/profile.d/zz-jamberry-editor.sh`** — reaches login shells that have no
+  PAM at all, most importantly the single-user rescue shell `sulogin` starts.
+  Without it that shell falls through to Fedora's `nano-default-editor.sh` and
+  gets nano, which is exactly the case the baked neovim exists for. The `zz-`
+  prefix makes it sort after that snippet. It sets the variables unconditionally;
+  your own `~/.bashrc` or `~/.zshrc` runs later still and can override them.
 
 ### ujust Shortcuts
 

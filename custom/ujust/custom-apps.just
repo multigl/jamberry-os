@@ -36,31 +36,10 @@ install-all-brew:
     brew bundle --file /usr/share/ublue-os/homebrew/development.Brewfile
     brew bundle --file /usr/share/ublue-os/homebrew/fonts.Brewfile
 
-# Install JetBrains Toolbox for managing JetBrains IDEs
-[group('Apps')]
-install-jetbrains-toolbox:
-    #!/usr/bin/env bash
-    echo "Installing JetBrains Toolbox..."
-    pushd "$(mktemp -d)"
-    echo "Fetching latest version..."
-    curl -sSfL -o releases.json "https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release"
-    BUILD_VERSION=$(jq -r '.TBA[0].build' ./releases.json)
-    DOWNLOAD_LINK=$(jq -r '.TBA[0].downloads.linux.link' ./releases.json)
-    CHECKSUM_LINK=$(jq -r '.TBA[0].downloads.linux.checksumLink' ./releases.json)
-    echo "Installing JetBrains Toolbox ${BUILD_VERSION}"
-    curl -sSfL -O "${DOWNLOAD_LINK}"
-    curl -sSfL "${CHECKSUM_LINK}" | sha256sum -c
-    tar zxf jetbrains-toolbox-"${BUILD_VERSION}".tar.gz
-    mkdir -p $HOME/.local/share/JetBrains/ToolboxApp/
-    mv jetbrains-toolbox-"${BUILD_VERSION}"/* $HOME/.local/share/JetBrains/ToolboxApp/
-    popd
-    echo "Launching JetBrains Toolbox..."
-    $HOME/.local/share/JetBrains/ToolboxApp/bin/jetbrains-toolbox
-
-# Shortcut for install-jetbrains-toolbox
-[group('Apps')]
-jetbrains-toolbox:
-    @ujust install-jetbrains-toolbox
+# install-jetbrains-toolbox and its jetbrains-toolbox alias used to live here.
+# @projectbluefin/common's apps.just defines both, 00-entry.just sets
+# allow-duplicate-recipes, and upstream wins - so the copies here were unreachable
+# dead code. Use the upstream recipes, which install the ublue-os/tap cask.
 
 # Install a Flatpak application from Flathub
 [group('Apps')]
@@ -90,7 +69,9 @@ install-vivaldi:
 # 1Password from build/20-onepassword.sh, so all of them are always present and
 # are not repeated here. The
 # neovim overlap with the chezmoi-managed Homebrew copy is deliberate: the dnf
-# copy is the floor for first boot and rescue, and Homebrew's wins on PATH.
+# copy is the floor for first boot and rescue, and since the image keeps /usr/bin
+# ahead of Homebrew it is also what a stock session resolves. Shells whose own
+# config prepends Homebrew - as these dotfiles do - get the Homebrew copy instead.
 # Install everything jamberry-os ships on top of the base image that is not already baked in
 [group('Apps')]
 install-jamberry-apps:
