@@ -189,23 +189,28 @@ jobs:
           default-tag: ${{ steps.generate-tags.outputs.default-tag }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # OPTIONAL: Sign and attest (SLSA Build L2 provenance)
-      # Bluefin pattern: keyless OIDC signing via Fulcio.
-      # Uncomment to enable. Requires 'id-token: write' permission (already granted).
-      # Non-fatal — signing failures never block image publishing.
-
-      # - name: Sign and publish
-      #   if: github.event_name != 'pull_request'
-      #   continue-on-error: true
-      #   uses: projectbluefin/actions/bootc-build/sign-and-publish@6231015b336556d2ff0adc1d1e59514bf19dcb42 # v1
-      #   with:
-      #     image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-      #     digest: ${{ steps.push.outputs.digest }}
-      #     signing-mode: keyless
-      #     generate-sbom: false
-      #     push-attestation: true
-      #     certificate-identity-regexp: https://github.com/${{ github.repository }}/.github/workflows/
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      # Keyless OIDC signing through Fulcio, plus a SLSA Build L2 provenance
+      # attestation. No cosign keypair and no repository secret: the runner's
+      # own id-token is the identity, which is why the permissions block above
+      # grants id-token and attestations write.
+      #
+      # The condition matches the push step exactly rather than only excluding
+      # pull requests, because this signs steps.push.outputs.digest — on any run
+      # where the push is skipped that output is empty and there is nothing to
+      # sign. continue-on-error keeps a Sigstore or Rekor outage from failing a
+      # build whose image is already published.
+      - name: Sign and publish
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        continue-on-error: true
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@9623ba6a5577ad1221d76a223c9dacbd9043bd04 # v1
+        with:
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          digest: ${{ steps.push.outputs.digest }}
+          signing-mode: keyless
+          generate-sbom: false
+          push-attestation: true
+          certificate-identity-regexp: https://github.com/${{ github.repository }}/.github/workflows/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build telemetry summary
         if: steps.detect-changes.outputs.should_build == 'true' || github.event_name != 'pull_request'
