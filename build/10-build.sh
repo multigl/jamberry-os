@@ -94,6 +94,27 @@ systemctl enable brew-update.timer
 systemctl enable brew-upgrade.timer
 # Example: systemctl mask unwanted-service
 
+# EDITOR is the bare command name on purpose. Homebrew's profile.d snippet puts
+# /home/linuxbrew/.linuxbrew/bin ahead of /usr/bin, so resolving through PATH at
+# exec time is what lets a brew-installed neovim take over once chezmoi has run,
+# while the dnf copy stays the floor for first boot and rescue. An absolute path
+# here would pin every session to the dnf copy forever.
+#
+# /etc/environment rather than /etc/profile.d: pam_env.so is in the auth stack of
+# /etc/authselect/system-auth, so this reaches every PAM session - login shells,
+# ssh and GDM - where a profile.d snippet reaches login shells only. It also runs
+# before profile.d, so Fedora's nano-default-editor snippet finds EDITOR already
+# set, hits its own [ -z "$EDITOR" ] guard, and does nothing.
+#
+# The file exists and is empty in the base image, so this appends rather than
+# creates. /etc is a three-way merge target in bootc: a host that edits this file
+# locally keeps its edit across bootc upgrade, making this a default rather than
+# enforced policy, which is the intent.
+cat >>/etc/environment <<'EOF'
+EDITOR=nvim
+VISUAL=nvim
+EOF
+
 echo "::endgroup::"
 
 # Restore default glob behavior
