@@ -416,3 +416,8 @@ format:
     fi
     # Run shfmt on all Bash scripts
     /usr/bin/find . -iname "*.sh" -type f -exec shfmt --write "{}" ';'
+
+# Assert a built image satisfies the fresh-install package contract
+[group('Utility')]
+test-image $target_image=("localhost/" + IMAGE_NAME) $tag=DEFAULT_TAG:
+    ./tests/image-contract.sh "${target_image}:${tag}"
