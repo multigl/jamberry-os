@@ -25,17 +25,18 @@ These are baked into the image, so they are there the moment you boot — no set
 - **tmux** - Terminal multiplexer, inherited from the template.
 - **zsh** - Shell. Present so a fresh host can switch shells and apply zsh dotfiles before Homebrew exists.
 - **just** (`just`) - Command runner backing `ujust`. Without it the shipped `.just` files have no runner and every `ujust` recipe is unreachable.
+- **Vivaldi** (`vivaldi-stable`) - Default web browser, replacing Firefox (see Removed/Disabled below). Installed from Vivaldi's official archive RPM repository by `build/30-vivaldi.sh`. At 444 MiB it is the largest package baked into this image.
 
 ### Added Applications (Runtime)
 
 Installed after first boot rather than baked in, so they update independently of the OS and do not add to image size.
 
 - **CLI Tools (Homebrew)**: none currently. `custom/brew/default.Brewfile` is comments-only; add entries there and install with `ujust install-default-apps`.
-- **GUI Apps (Flatpak)**: **Vivaldi** (`com.vivaldi.Vivaldi`) - Preinstalled on first boot. Reinstall with `ujust install-vivaldi` if you remove it.
+- **GUI Apps (Flatpak)**: none currently. `custom/flatpaks/default.preinstall` is comments-only; add entries there to have them preinstalled on first boot.
 
 ### Removed/Disabled
 
-- Nothing removed from the base image yet.
+- **Firefox** - removed from the base image. **Vivaldi** replaces it, baked into the image by `build/30-vivaldi.sh` rather than installed at runtime, so it is present offline and in the ISO. It is the default handler for `http`, `https`, `text/html` and `application/xhtml+xml`, and the value of `$BROWSER`. PDFs and images are deliberately not bound in `/etc/xdg/mimeapps.list`, so a later GNOME Papers or Loupe install takes over; with neither installed today, Vivaldi opens them instead.
 
 ### Configuration Changes
 
@@ -77,7 +78,6 @@ The values are set in two places, on purpose:
 ### ujust Shortcuts
 
 - `ujust install-jamberry-apps` - Everything above that is not already baked in
-- `ujust install-vivaldi` - Vivaldi on its own
 
 _Last updated: 2026-08-02_
 

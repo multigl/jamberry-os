@@ -59,23 +59,20 @@ install-vscode:
 install-gimp:
     ujust install-flatpak org.gimp.GIMP
 
-# Install the Vivaldi browser via Flatpak
-# Preinstalled on first boot; this re-installs it if it was removed
-[group('Apps')]
-install-vivaldi:
-    ujust install-flatpak com.vivaldi.Vivaldi
-
-# neovim, chezmoi, zsh, just and Ghostty come from build/10-build.sh, and
-# 1Password from build/20-onepassword.sh, so all of them are always present and
-# are not repeated here. The
-# neovim overlap with the chezmoi-managed Homebrew copy is deliberate: the dnf
-# copy is the floor for first boot and rescue, and since the image keeps /usr/bin
-# ahead of Homebrew it is also what a stock session resolves. Shells whose own
-# config prepends Homebrew - as these dotfiles do - get the Homebrew copy instead.
+# neovim, chezmoi, zsh, just and Ghostty come from build/10-build.sh, 1Password
+# from build/20-onepassword.sh, and Vivaldi from build/30-vivaldi.sh, so none of
+# them are repeated here. The neovim overlap with the chezmoi-managed Homebrew
+# copy is deliberate: the dnf copy is the floor for first boot and rescue, and
+# since the image keeps /usr/bin ahead of Homebrew it is also what a stock
+# session resolves. Shells whose own config prepends Homebrew - as these dotfiles
+# do - get the Homebrew copy instead.
+#
+# This currently does no more than install-default-apps, since Vivaldi moved into
+# the image. It is kept as the stable public name for "everything jamberry-os
+# adds that is not baked in" so future additions do not have to re-teach it.
 # Install everything jamberry-os ships on top of the base image that is not already baked in
 [group('Apps')]
 install-jamberry-apps:
     #!/usr/bin/env bash
     echo "Installing jamberry-os runtime applications..."
     brew bundle --file /usr/share/ublue-os/homebrew/default.Brewfile
-    ujust install-vivaldi
