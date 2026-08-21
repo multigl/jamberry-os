@@ -1,0 +1,42 @@
+#!/usr/bin/expect -f
+###############################################################################
+# Run one command on the test VM's serial console and print its output.
+#
+# Needed only for bootstrap: Fedora Silverblue ships sshd disabled, and
+# bootc-image-builder refuses [customizations.services] for qcow2 (it warns and
+# then exits 0 anyway), so there is no declarative way to have sshd running at
+# first boot. Everything after bootstrap goes over SSH.
+#
+# Output is delimited by a sentinel rather than by matching a shell prompt.
+# Prompt matching is unreliable here: the console carries bracketed-paste and
+# OSC 3008 sequences that break naive prompt regexes.
+#
+# Usage: console.exp <domain> <user> <password> <command>
+###############################################################################
+set timeout 240
+set domain   [lindex $argv 0]
+set user     [lindex $argv 1]
+set password [lindex $argv 2]
+set cmd      [lindex $argv 3]
+
+log_user 0
+spawn sudo virsh console $domain --force
+sleep 2
+send "\r"
+
+expect {
+  -re {[Ll]ogin: *$}    { send "$user\r";     exp_continue }
+  -re {[Pp]assword: *$} { send "$password\r"; exp_continue }
+  -re {__READY__}       { }
+  -re {\$ $}            { send "echo __READY__\r"; exp_continue }
+  timeout               { puts "TIMEOUT waiting for login"; exit 1 }
+}
+
+send "{ $cmd ; } 2>&1; echo __RC=\$?__\r"
+log_user 1
+expect {
+  -re {\[sudo\] password for [^:]+: *$} { log_user 0; send "$password\r"; log_user 1; exp_continue }
+  -re {__RC=([0-9]+)__}                 { }
+  timeout                               { puts "\nTIMEOUT running command"; close; exit 1 }
+}
+close
