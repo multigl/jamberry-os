@@ -72,6 +72,17 @@ jobs:
         with:
           storage-backend: btrfs
           update-podman: "true"
+          # Rootful Podman defaults to fuse-overlayfs, which routes every file
+          # operation through userspace. The silverblue base is a 257-layer
+          # rechunked image, so that cost is multiplied across a very deep
+          # lowerdir stack. It was merely slow until GitHub's ubuntu-24.04
+          # runner image went 20260720.247.2 -> 20260810.271.1 on 2026-08-12,
+          # after which a single layer commit went from ~2 minutes to ~30 and
+          # `bootc container lint` from 4 seconds to 6 minutes - putting a cold
+          # build past the 120-minute timeout below every time. Kernel overlayfs
+          # brings both back to seconds. The action verifies the driver really
+          # is overlay with no mount_program and fails loudly if not.
+          native-overlay: "true"
           install-tools: '["just"]'
 
       - name: Restore DNF cache
